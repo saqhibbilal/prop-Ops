@@ -1,0 +1,5 @@
+outs:
+- md5: 5237b6cceaa04cf985b09f9837eae69e
+  size: 362395
+  hash: md5
+  path: baseline_properties.csv

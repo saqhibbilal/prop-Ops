@@ -1,0 +1,27 @@
+schema: '2.0'
+stages:
+  process:
+    cmd: python src/data/process_data.py data/raw/baseline_properties.csv 
+      data/processed
+    deps:
+    - path: data/raw/baseline_properties.csv
+      hash: md5
+      md5: 5237b6cceaa04cf985b09f9837eae69e
+      size: 362395
+    - path: src/data/process_data.py
+      hash: md5
+      md5: 91ed74d132e06a8c24136031f1985546
+      size: 3439
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 1d2ff6a43be32d3cbc6409bee12a2918
+      size: 112782
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 91aa2ee40800909274013493757fc122
+      size: 393324
+    - path: data/processed/val.csv
+      hash: md5
+      md5: bec6c1426e2d00ccbf5ca80410598f79
+      size: 56524

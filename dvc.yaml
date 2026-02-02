@@ -1,0 +1,10 @@
+stages:
+  process:
+    cmd: python src/data/process_data.py data/raw/baseline_properties.csv data/processed
+    deps:
+      - src/data/process_data.py
+      - data/raw/baseline_properties.csv
+    outs:
+      - data/processed/train.csv
+      - data/processed/val.csv
+      - data/processed/test.csv
