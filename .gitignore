@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Data
+data/raw/*.csv
+data/raw/*.parquet
+data/processed/*.csv
+data/processed/*.parquet
+*.pkl
+*.joblib
+
+# Models
+models/*.pkl
+models/*.joblib
+models/*.h5
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DVC
+.dvc/cache
+.dvc/tmp
+
+# Environment
+.env
+.env.local
+
+# Monitoring
+monitoring/*.db
+monitoring/*.parquet
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
