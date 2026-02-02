@@ -48,5 +48,9 @@ monitoring/*.parquet
 .ipynb_checkpoints/
 *.ipynb
 
+# MLflow
+mlruns/
+feature_importance.csv
+
 # Documentation (temporary)
 README.md
