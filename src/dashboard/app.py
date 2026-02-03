@@ -332,7 +332,7 @@ with tab5:
             if num_cols:
                 for c in num_cols:
                     fmt_df[c] = fmt_df[c].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "")
-            st.dataframe(fmt_df, use_container_width=True)
+            st.dataframe(fmt_df)
             if "run_id" in metrics_df.columns:
                 st.caption("Run IDs: " + ", ".join(metrics_df["run_id"].astype(str).tolist()))
 
@@ -355,7 +355,7 @@ with tab5:
                     mean_by_model.columns = ["Model", "Mean prediction ($)", "Std"]
                     mean_by_model["Mean prediction ($)"] = mean_by_model["Mean prediction ($)"].apply(lambda x: f"${x:,.0f}")
                     mean_by_model["Std"] = mean_by_model["Std"].apply(lambda x: f"{x:.2f}")
-                    st.dataframe(mean_by_model, use_container_width=True)
+                    st.dataframe(mean_by_model)
                 with col2:
                     st.caption("Sample size: {} rows from test set.".format(len(y_sample)))
             else:

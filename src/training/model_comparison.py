@@ -41,12 +41,18 @@ def get_comparison_runs(experiment_name=None, limit_per_model=1):
         return []
 
     # One run per model_type (best by val_r2)
+    # MLflow may use "tags.model_type" or "params.model_type" depending on version
     seen = set()
     selected = []
     for _, row in runs.iterrows():
-        mt = row.get("tags.model_type") or row.get("model_type")
-        if pd.isna(mt):
+        mt = (
+            row.get("tags.model_type")
+            or row.get("params.model_type")
+            or row.get("model_type")
+        )
+        if pd.isna(mt) or mt is None or str(mt).strip() == "":
             continue
+        mt = str(mt).strip()
         if mt not in seen:
             seen.add(mt)
             selected.append({"run_id": row["run_id"], "model_type": mt})

@@ -2,6 +2,11 @@
 Training configuration for property price prediction model.
 """
 
+from pathlib import Path
+
+# Project root (parent of src/) for resolving paths
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 # XGBoost model parameters (used by train.py)
 MODEL_PARAMS = {
     'n_estimators': 100,
@@ -48,12 +53,14 @@ MULTIPLE_MODEL_CONFIGS = {
     },
 }
 
-# Data paths
-TRAIN_DATA_PATH = 'data/processed/train.csv'
-VAL_DATA_PATH = 'data/processed/val.csv'
-TEST_DATA_PATH = 'data/processed/test.csv'
+# Data paths (absolute so dashboard/training find data from any cwd)
+DATA_DIR = _PROJECT_ROOT / "data" / "processed"
+TRAIN_DATA_PATH = str(DATA_DIR / "train.csv")
+VAL_DATA_PATH = str(DATA_DIR / "val.csv")
+TEST_DATA_PATH = str(DATA_DIR / "test.csv")
 
-# MLflow settings
-MLFLOW_TRACKING_URI = 'file:./mlruns'
+# MLflow settings (absolute path so dashboard finds mlruns when run from any cwd)
+MLRUNS_DIR = _PROJECT_ROOT / "mlruns"
+MLFLOW_TRACKING_URI = MLRUNS_DIR.resolve().as_uri()
 EXPERIMENT_NAME = 'property_price_prediction'
 EXPERIMENT_NAME_COMPARISON = 'property_price_model_comparison'
