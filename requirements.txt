@@ -9,6 +9,7 @@ dvc>=3.0.0
 # Phase 3: Model training & tracking
 mlflow>=2.0.0
 xgboost>=2.0.0
+lightgbm>=4.0.0
 
 # Phase 4: API service
 fastapi>=0.100.0

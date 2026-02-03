@@ -64,11 +64,12 @@ if auto_refresh:
     st.experimental_rerun()
 
 # Main tabs
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Overview",
     "Predictions",
     "Drift Detection",
-    "Metrics"
+    "Metrics",
+    "Model Comparison"
 ])
 
 # Tab 1: Overview
@@ -314,6 +315,53 @@ with tab4:
                 col3.metric("R² Score", f"{r2:.4f}")
     else:
         st.info("No metrics data available yet.")
+
+# Tab 5: Model Comparison
+with tab5:
+    st.header("Model Comparison")
+    try:
+        from training.model_comparison import get_metrics_table, get_predictions_comparison
+        metrics_df = get_metrics_table(use_test_data=True)
+        if metrics_df.empty:
+            st.info("No comparison runs yet. Run: `python -m src.training.train_multiple_models` from project root (or `python src/training/train_multiple_models.py`).")
+        else:
+            st.subheader("Metrics comparison")
+            display_cols = [c for c in metrics_df.columns if c != "run_id"]
+            num_cols = [c for c in display_cols if c != "model_type" and metrics_df[c].dtype in ["float64", "int64"]]
+            fmt_df = metrics_df[display_cols].copy()
+            if num_cols:
+                for c in num_cols:
+                    fmt_df[c] = fmt_df[c].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "")
+            st.dataframe(fmt_df, use_container_width=True)
+            if "run_id" in metrics_df.columns:
+                st.caption("Run IDs: " + ", ".join(metrics_df["run_id"].astype(str).tolist()))
+
+            st.subheader("Prediction comparison (same test sample)")
+            X_sample, y_sample, pred_df = get_predictions_comparison(sample_size=200)
+            if not pred_df.empty:
+                selected_model = st.selectbox("Select model to highlight", options=["All"] + pred_df["model_type"].unique().tolist(), key="model_compare_select")
+                fig = px.box(
+                    pred_df,
+                    x="model_type",
+                    y="prediction",
+                    title="Prediction distribution by model",
+                    labels={"prediction": "Predicted Price ($)", "model_type": "Model"},
+                )
+                fig.update_traces(marker_color=CHART_COLORS[0])
+                st.plotly_chart(fig, use_container_width=True)
+                col1, col2 = st.columns(2)
+                with col1:
+                    mean_by_model = pred_df.groupby("model_type")["prediction"].agg(["mean", "std"]).reset_index()
+                    mean_by_model.columns = ["Model", "Mean prediction ($)", "Std"]
+                    mean_by_model["Mean prediction ($)"] = mean_by_model["Mean prediction ($)"].apply(lambda x: f"${x:,.0f}")
+                    mean_by_model["Std"] = mean_by_model["Std"].apply(lambda x: f"{x:.2f}")
+                    st.dataframe(mean_by_model, use_container_width=True)
+                with col2:
+                    st.caption("Sample size: {} rows from test set.".format(len(y_sample)))
+            else:
+                st.info("Could not load predictions. Ensure test data and models are available.")
+    except Exception as e:
+        st.warning("Model comparison not available: " + str(e))
 
 # Footer
 st.sidebar.markdown("---")
