@@ -21,6 +21,19 @@ logger = logging.getLogger(__name__)
 
 # Global model variable
 model = None
+monitor = None
+
+# Initialize monitoring
+try:
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from monitoring.monitor import PredictionMonitor
+    monitor = PredictionMonitor()
+    logger.info("Monitoring initialized")
+except Exception as e:
+    logger.warning(f"Monitoring not available: {e}")
+    monitor = None
 
 
 @asynccontextmanager
@@ -80,6 +93,17 @@ async def predict_single(property_input: PropertyInput):
         # Make prediction
         prediction = model.predict(features_df)[0]
         
+        # Log prediction for monitoring
+        if monitor:
+            try:
+                monitor.log_prediction(
+                    features=property_dict,
+                    prediction=float(prediction),
+                    model_version=os.getenv("MLFLOW_RUN_ID")
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log prediction: {e}")
+        
         return PropertyPrediction(
             price=float(prediction),
             price_formatted=f"${prediction:,.2f}"
@@ -111,10 +135,22 @@ async def predict_batch(batch_input: BatchPropertyInput):
             features_df = prepare_features(property_dict)
             prediction = model.predict(features_df)[0]
             
-            predictions.append(PropertyPrediction(
+            pred_obj = PropertyPrediction(
                 price=float(prediction),
                 price_formatted=f"${prediction:,.2f}"
-            ))
+            )
+            predictions.append(pred_obj)
+            
+            # Log prediction for monitoring
+            if monitor:
+                try:
+                    monitor.log_prediction(
+                        features=property_dict,
+                        prediction=float(prediction),
+                        model_version=os.getenv("MLFLOW_RUN_ID")
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to log prediction: {e}")
         
         return BatchPredictionResponse(
             predictions=predictions,
