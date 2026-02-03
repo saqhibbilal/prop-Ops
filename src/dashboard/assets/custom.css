@@ -1,0 +1,76 @@
+/* PropTech Dashboard - Custom color theme */
+/* Primary: #2872A1 | Secondary: #CBDDE9 */
+
+:root {
+  --primary: #2872A1;
+  --primary-dark: #1e5a82;
+  --secondary: #CBDDE9;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+}
+
+/* Main block background */
+.stApp {
+  background-color: var(--background);
+}
+
+/* Headers */
+h1, h2, h3 {
+  color: var(--text) !important;
+}
+
+/* Primary buttons - use Streamlit's data attribute or class overrides where applicable */
+.stButton > button {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.stButton > button:hover {
+  background-color: var(--primary-dark) !important;
+  color: white !important;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+  background-color: var(--surface);
+}
+
+[data-testid="stSidebar"] .stMarkdown {
+  color: var(--text);
+}
+
+/* Metric cards */
+[data-testid="stMetricValue"] {
+  color: var(--primary);
+}
+
+/* Tabs - active state */
+.stTabs [data-baseweb="tab-list"] {
+  gap: 0.5rem;
+}
+
+.stTabs [data-baseweb="tab"] {
+  color: var(--text-muted);
+}
+
+.stTabs [aria-selected="true"] {
+  color: var(--primary) !important;
+  border-bottom-color: var(--primary) !important;
+}
+
+/* Expander and other widgets - accent */
+[data-testid="stExpander"] summary {
+  color: var(--text);
+}
+
+/* Links */
+a {
+  color: var(--primary) !important;
+}
+
+a:hover {
+  color: var(--primary-dark) !important;
+}

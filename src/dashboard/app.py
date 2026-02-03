@@ -34,16 +34,25 @@ def get_detector():
 # Page configuration
 st.set_page_config(
     page_title="PropTech ML Monitoring Dashboard",
-    page_icon="🏠",
+    page_icon=None,
     layout="wide"
 )
+
+# Load custom CSS
+_css_path = Path(__file__).parent / "assets" / "custom.css"
+if _css_path.exists():
+    with open(_css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Chart color theme (Primary #2872A1, Secondary #CBDDE9)
+CHART_COLORS = ["#2872A1", "#CBDDE9", "#5a9bc4", "#9ec9e0", "#1e5a82"]
 
 # Initialize session state
 if 'monitor' not in st.session_state:
     st.session_state.monitor = PredictionMonitor()
 
 # Title
-st.title("🏠 PropTech ML Monitoring Dashboard")
+st.title("PropTech ML Monitoring Dashboard")
 st.markdown("Monitor model predictions, detect drift, and track model performance")
 
 # Sidebar
@@ -56,10 +65,10 @@ if auto_refresh:
 
 # Main tabs
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Overview",
-    "🔍 Predictions",
-    "⚠️ Drift Detection",
-    "📈 Metrics"
+    "Overview",
+    "Predictions",
+    "Drift Detection",
+    "Metrics"
 ])
 
 # Tab 1: Overview
@@ -109,6 +118,7 @@ with tab1:
             title='Prediction Trend Over Time',
             labels={'prediction': 'Predicted Price ($)', 'timestamp': 'Time'}
         )
+        fig.update_traces(line_color=CHART_COLORS[0])
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("No predictions data available yet. Make some predictions via the API to see data here.")
@@ -131,6 +141,7 @@ with tab2:
             title='Distribution of Predictions',
             labels={'prediction': 'Predicted Price ($)', 'count': 'Frequency'}
         )
+        fig.update_traces(marker_color=CHART_COLORS[0])
         st.plotly_chart(fig, use_container_width=True)
         
         # Prediction statistics
@@ -180,9 +191,9 @@ with tab3:
                             status = drift_results.get('status', 'unknown')
                             
                             if drift_detected:
-                                st.error(f"⚠️ Drift Detected! Status: {status}")
+                                st.error(f"Drift Detected. Status: {status}")
                             else:
-                                st.success(f"✅ No Drift Detected. Status: {status}")
+                                st.success(f"No Drift Detected. Status: {status}")
                         
                         with col2:
                             st.subheader("Data Drift")
@@ -207,6 +218,7 @@ with tab3:
                                 title='Drift Metrics Over Time',
                                 labels={'metric_value': 'Drift Score', 'timestamp': 'Time'}
                             )
+                            fig.update_layout(colorway=CHART_COLORS)
                             st.plotly_chart(fig, use_container_width=True)
                             
                             st.dataframe(drift_metrics[['timestamp', 'metric_type', 'metric_name', 'metric_value', 'status']])
@@ -249,6 +261,7 @@ with tab4:
                         title=f'Distribution of {selected_feature}',
                         nbins=20
                     )
+                    fig.update_traces(marker_color=CHART_COLORS[0])
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
@@ -259,6 +272,7 @@ with tab4:
                         title=f'{selected_feature} vs Prediction',
                         labels={'prediction': 'Predicted Price ($)'}
                     )
+                    fig.update_traces(marker_color=CHART_COLORS[0])
                     st.plotly_chart(fig, use_container_width=True)
         
         # Prediction vs Ground Truth (if available)
@@ -275,14 +289,14 @@ with tab4:
                     title='Predicted vs Actual Prices',
                     labels={'prediction': 'Predicted Price ($)', 'ground_truth': 'Actual Price ($)'}
                 )
-                # Add diagonal line
+                fig.update_traces(marker_color=CHART_COLORS[0])
                 max_val = max(valid_data['ground_truth'].max(), valid_data['prediction'].max())
                 fig.add_trace(go.Scatter(
                     x=[0, max_val],
                     y=[0, max_val],
                     mode='lines',
                     name='Perfect Prediction',
-                    line=dict(dash='dash', color='red')
+                    line=dict(dash='dash', color=CHART_COLORS[4])
                 ))
                 st.plotly_chart(fig, use_container_width=True)
                 
