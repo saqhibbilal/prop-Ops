@@ -52,7 +52,7 @@ refresh_interval = st.sidebar.slider("Auto-refresh interval (seconds)", 10, 300,
 auto_refresh = st.sidebar.checkbox("Enable auto-refresh", value=False)
 
 if auto_refresh:
-    st.rerun()
+    st.experimental_rerun()
 
 # Main tabs
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -145,7 +145,7 @@ with tab2:
             st.subheader("Recent Predictions Table")
             display_df = predictions_df[['timestamp', 'prediction', 'model_version']].head(20)
             display_df['timestamp'] = pd.to_datetime(display_df['timestamp'])
-            st.dataframe(display_df, use_container_width=True)
+            st.dataframe(display_df)
     else:
         st.info("No predictions data available.")
 
@@ -153,7 +153,7 @@ with tab2:
 with tab3:
     st.header("Drift Detection")
     
-    if st.button("Check for Drift", type="primary"):
+    if st.button("Check for Drift"):
         detector = get_detector()
         if detector is None:
             st.error("Drift detection is not available. Evidently AI may not be properly installed or there's a compatibility issue.")

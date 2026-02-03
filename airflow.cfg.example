@@ -1,0 +1,38 @@
+# Example Airflow configuration
+# Copy this to airflow.cfg and adjust as needed
+
+[core]
+# Airflow home directory
+airflow_home = /path/to/airflow
+
+# DAGs folder
+dags_folder = pipelines
+
+# Load examples (set to False in production)
+load_examples = False
+
+# Executor (use SequentialExecutor for local development)
+executor = SequentialExecutor
+
+# SQLite database (for local development)
+sql_alchemy_conn = sqlite:///airflow.db
+
+# Timezone
+default_timezone = UTC
+
+[webserver]
+# Web server host
+web_server_host = 0.0.0.0
+
+# Web server port
+web_server_port = 8080
+
+# Secret key (change in production!)
+secret_key = temporary_key
+
+[scheduler]
+# Job heartbeat interval
+job_heartbeat_sec = 5
+
+# Scheduler heartbeat interval
+scheduler_heartbeat_sec = 5
