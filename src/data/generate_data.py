@@ -1,6 +1,10 @@
 """
 Synthetic property data generator for PropTech MLOps project.
 Generates realistic property listings with configurable drift simulation.
+
+Optional: To attach market signals (demand, competition, seasonality) to listings,
+run data.generate_market_signals to populate the market DB, then use
+market_data_store.enrich_with_market_signals(df) to join by listing_date and location.
 """
 
 import pandas as pd
