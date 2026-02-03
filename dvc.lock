@@ -6,7 +6,7 @@ stages:
     deps:
     - path: data/raw/baseline_properties.csv
       hash: md5
-      md5: 5237b6cceaa04cf985b09f9837eae69e
+      md5: 96edb675687c1cc700b12e2d8407a677
       size: 362395
     - path: src/data/process_data.py
       hash: md5
