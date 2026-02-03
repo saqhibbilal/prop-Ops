@@ -64,3 +64,4 @@ MLRUNS_DIR = _PROJECT_ROOT / "mlruns"
 MLFLOW_TRACKING_URI = MLRUNS_DIR.resolve().as_uri()
 EXPERIMENT_NAME = 'property_price_prediction'
 EXPERIMENT_NAME_COMPARISON = 'property_price_model_comparison'
+EXPERIMENT_NAME_TUNING = 'property_price_hyperparameter_tuning'

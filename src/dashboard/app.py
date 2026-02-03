@@ -64,12 +64,13 @@ if auto_refresh:
     st.experimental_rerun()
 
 # Main tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview",
     "Predictions",
     "Drift Detection",
     "Metrics",
-    "Model Comparison"
+    "Model Comparison",
+    "Hyperparameter Tuning"
 ])
 
 # Tab 1: Overview
@@ -362,6 +363,108 @@ with tab5:
                 st.info("Could not load predictions. Ensure test data and models are available.")
     except Exception as e:
         st.warning("Model comparison not available: " + str(e))
+
+# Tab 6: Hyperparameter Tuning
+with tab6:
+    st.header("Hyperparameter Tuning")
+    st.markdown("Tune XGBoost and LightGBM with Optuna. Results are logged to MLflow.")
+    try:
+        from training.hyperparameter_tuning import run_tuning, get_tuning_results
+        from training.tune_config import N_TRIALS_XGBOOST, N_TRIALS_LIGHTGBM
+
+        c1, c2, c3 = st.columns([1, 1, 2])
+        with c1:
+            n_trials_xgb = st.number_input("XGBoost trials", min_value=2, max_value=50, value=min(5, N_TRIALS_XGBOOST), key="n_trials_xgb")
+        with c2:
+            n_trials_lgb = st.number_input("LightGBM trials", min_value=2, max_value=50, value=min(5, N_TRIALS_LIGHTGBM), key="n_trials_lgb")
+
+        if st.button("Run Tuning"):
+            with st.spinner("Running Optuna tuning (XGBoost + LightGBM). This may take a few minutes..."):
+                res = run_tuning(model_name="both", n_trials_xgb=n_trials_xgb, n_trials_lgb=n_trials_lgb)
+            st.success("Tuning complete.")
+            st.session_state["last_tuning_result"] = res
+
+        # Show last run result from session state, or load from MLflow
+        result = st.session_state.get("last_tuning_result")
+        if result is None:
+            result = get_tuning_results()
+            if result is None:
+                result = {}
+
+        if result:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Best parameters: XGBoost")
+                if result.get("best_xgb"):
+                    for k, v in result["best_xgb"].items():
+                        st.text(f"{k}: {v}")
+                else:
+                    st.info("No XGBoost tuning runs yet.")
+            with col2:
+                st.subheader("Best parameters: LightGBM")
+                if result.get("best_lgb"):
+                    for k, v in result["best_lgb"].items():
+                        st.text(f"{k}: {v}")
+                else:
+                    st.info("No LightGBM tuning runs yet.")
+
+            # Performance comparison (trials over time)
+            st.subheader("Tuning progress")
+            trials_xgb = result.get("trials_xgb") or []
+            trials_lgb = result.get("trials_lgb") or []
+            if trials_xgb or trials_lgb:
+                plot_data = []
+                for t in trials_xgb:
+                    plot_data.append({"trial": t["number"], "val_rmse": t["value"], "model": "XGBoost"})
+                for t in trials_lgb:
+                    plot_data.append({"trial": t["number"], "val_rmse": t["value"], "model": "LightGBM"})
+                if plot_data:
+                    df_trials = pd.DataFrame(plot_data)
+                    fig = px.line(
+                        df_trials,
+                        x="trial",
+                        y="val_rmse",
+                        color="model",
+                        title="Validation RMSE per trial",
+                        labels={"val_rmse": "Val RMSE", "trial": "Trial number"},
+                    )
+                    fig.update_layout(colorway=CHART_COLORS)
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # Parameter importance (only when we have study from last Run Tuning)
+            if result.get("study_xgb") or result.get("study_lgb"):
+                st.subheader("Parameter importance")
+                try:
+                    import optuna.importance as optuna_importance
+                    imp_col1, imp_col2 = st.columns(2)
+                    with imp_col1:
+                        if result.get("study_xgb"):
+                            importance = optuna_importance.get_param_importances(result["study_xgb"])
+                            imp_df = pd.DataFrame(list(importance.items()), columns=["parameter", "importance"])
+                            imp_df = imp_df.sort_values("importance", ascending=False)
+                            fig_imp = px.bar(imp_df, x="parameter", y="importance", title="XGBoost")
+                            fig_imp.update_traces(marker_color=CHART_COLORS[0])
+                            st.plotly_chart(fig_imp, use_container_width=True)
+                    with imp_col2:
+                        if result.get("study_lgb"):
+                            importance = optuna_importance.get_param_importances(result["study_lgb"])
+                            imp_df = pd.DataFrame(list(importance.items()), columns=["parameter", "importance"])
+                            imp_df = imp_df.sort_values("importance", ascending=False)
+                            fig_imp = px.bar(imp_df, x="parameter", y="importance", title="LightGBM")
+                            fig_imp.update_traces(marker_color=CHART_COLORS[1])
+                            st.plotly_chart(fig_imp, use_container_width=True)
+                except Exception as e:
+                    st.caption("Parameter importance not available: " + str(e))
+
+            # Trials table from MLflow (when loaded from get_tuning_results)
+            tuning_trials = result.get("tuning_trials")
+            if tuning_trials is not None and not tuning_trials.empty:
+                st.subheader("Recent trials (from MLflow)")
+                st.dataframe(tuning_trials.head(30))
+        else:
+            st.info("No tuning results yet. Click 'Run Tuning' to start, or run from CLI: python -m src.training.hyperparameter_tuning --model both")
+    except Exception as e:
+        st.warning("Hyperparameter tuning not available: " + str(e))
 
 # Footer
 st.sidebar.markdown("---")
