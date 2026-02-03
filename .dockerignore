@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Data
+data/raw/*.csv
+data/processed/*.csv
+*.pkl
+*.joblib
+
+# Models
+models/*.pkl
+models/*.joblib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# Testing
+test_*.py
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MLflow (will be mounted as volume)
+mlruns/
+
+# Monitoring (will be mounted as volume)
+monitoring/

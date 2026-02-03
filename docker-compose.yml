@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  # MLflow Tracking Server
+  mlflow:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mlflow
+    container_name: prop-ops-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/app/mlruns
+      - ./mlruns:/app/mlruns # Mount local mlruns for development
+    networks:
+      - prop-ops-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # FastAPI Inference Service
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: prop-ops-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=property_price_prediction
+      - MLFLOW_RUN_ID=${MLFLOW_RUN_ID:-}
+      - PYTHONPATH=/app
+    volumes:
+      - ./src:/app/src
+      - ./monitoring:/app/monitoring
+      - mlflow-data:/app/mlruns
+      - monitoring-data:/app/monitoring-data
+    depends_on:
+      - mlflow
+    networks:
+      - prop-ops-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Streamlit Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dashboard
+    container_name: prop-ops-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MONITORING_DIR=/app/monitoring
+      - PYTHONPATH=/app
+    volumes:
+      - ./src:/app/src
+      - ./monitoring:/app/monitoring
+      - monitoring-data:/app/monitoring-data
+      - mlflow-data:/app/mlruns
+    depends_on:
+      - mlflow
+      - api
+    networks:
+      - prop-ops-network
+
+volumes:
+  mlflow-data:
+    driver: local
+  monitoring-data:
+    driver: local
+
+networks:
+  prop-ops-network:
+    driver: bridge
