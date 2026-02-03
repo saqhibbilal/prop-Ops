@@ -5,14 +5,25 @@ Drift detection using Evidently AI.
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
 
-try:
-    from evidently import ColumnMapping
-    from evidently.metric_preset import DataDriftPreset, TargetDriftPreset
-    from evidently.report import Report
-    EVIDENTLY_AVAILABLE = True
-except ImportError:
-    EVIDENTLY_AVAILABLE = False
-    print("Warning: Evidently AI not available. Drift detection will be limited.")
+# Lazy import flag - will be set when Evidently is actually imported
+EVIDENTLY_AVAILABLE = None
+
+def _check_evidently():
+    """Lazy check for Evidently availability."""
+    global EVIDENTLY_AVAILABLE
+    if EVIDENTLY_AVAILABLE is None:
+        try:
+            # Try to import Evidently - will fail if asyncio issues occur
+            from evidently import ColumnMapping
+            from evidently.metric_preset import DataDriftPreset, TargetDriftPreset
+            from evidently.report import Report
+            
+            EVIDENTLY_AVAILABLE = True
+        except (ImportError, RuntimeError) as e:
+            EVIDENTLY_AVAILABLE = False
+            # Don't print in Streamlit context - let caller handle it
+    
+    return EVIDENTLY_AVAILABLE
 
 from .data_store import MonitoringStore
 from .config import (
@@ -58,11 +69,16 @@ class DriftDetector:
         Returns:
             Dictionary with drift detection results
         """
-        if not EVIDENTLY_AVAILABLE:
+        if not _check_evidently():
             return {
                 "drift_detected": False,
                 "message": "Evidently AI not available. Install with: pip install evidently"
             }
+        
+        # Import here to avoid asyncio issues
+        from evidently import ColumnMapping
+        from evidently.metric_preset import DataDriftPreset
+        from evidently.report import Report
         
         if self.reference_data.empty or current_data.empty:
             return {
@@ -160,11 +176,15 @@ class DriftDetector:
         Returns:
             Dictionary with prediction drift results
         """
-        if not EVIDENTLY_AVAILABLE:
+        if not _check_evidently():
             return {
                 "drift_detected": False,
                 "message": "Evidently AI not available. Install with: pip install evidently"
             }
+        
+        # Import here to avoid asyncio issues
+        from evidently.metric_preset import TargetDriftPreset
+        from evidently.report import Report
         
         threshold = threshold or PREDICTION_DRIFT_THRESHOLD
         
