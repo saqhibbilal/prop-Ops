@@ -23,6 +23,18 @@ import mlflow
 CHART_COLORS = ["#2872A1", "#CBDDE9", "#5a9bc4", "#9ec9e0", "#1e5a82"]
 
 
+def _clean_date(date_value):
+    """Convert date input to date object or None."""
+    if date_value is None:
+        return None
+    if isinstance(date_value, date):
+        return date_value
+    # Handle datetime objects
+    if hasattr(date_value, 'date'):
+        return date_value.date()
+    return None
+
+
 def render_pricing_page():
     """Render the complete dynamic pricing dashboard page."""
     
@@ -102,12 +114,12 @@ def render_pricing_page():
                     st.error("ML model not loaded. Cannot compute base price.")
                 else:
                     try:
-                        # Build property dict
+                        # Build property dict with explicit types
                         prop_dict = {
-                            "area_sqft": area_sqft,
-                            "bedrooms": bedrooms,
-                            "bathrooms": bathrooms,
-                            "age": age,
+                            "area_sqft": float(area_sqft),
+                            "bedrooms": int(bedrooms),
+                            "bathrooms": float(bathrooms),
+                            "age": int(age),
                             "has_parking": 1 if has_parking else 0,
                             "has_gym": 1 if has_gym else 0,
                             "has_pool": 1 if has_pool else 0,
@@ -142,7 +154,7 @@ def render_pricing_page():
                             base_price=base_price,
                             location=location,
                             constraints=constraints,
-                            as_of_date=as_of_date,
+                            as_of_date=_clean_date(as_of_date),
                         )
                         
                         # Display results
@@ -191,10 +203,10 @@ def render_pricing_page():
                 else:
                     try:
                         prop_dict_r = {
-                            "area_sqft": area_sqft_r,
-                            "bedrooms": bedrooms_r,
-                            "bathrooms": bathrooms_r,
-                            "age": age_r,
+                            "area_sqft": float(area_sqft_r),
+                            "bedrooms": int(bedrooms_r),
+                            "bathrooms": float(bathrooms_r),
+                            "age": int(age_r),
                             "has_parking": 1 if has_parking_r else 0,
                             "has_gym": 1 if has_gym_r else 0,
                             "has_pool": 1 if has_pool_r else 0,
@@ -212,11 +224,11 @@ def render_pricing_page():
                         base_price_r = float(model.predict(features_df_r)[0])
                         
                         alert = engine.alert_for_renter(
-                            asking_price=asking_price,
+                            asking_price=float(asking_price),
                             base_price=base_price_r,
                             location=location_r,
-                            as_of_date=as_of_date_r,
-                            fair_band_pct=fair_band_pct,
+                            as_of_date=_clean_date(as_of_date_r),
+                            fair_band_pct=float(fair_band_pct),
                         )
                         
                         if alert.is_fair:
@@ -275,10 +287,10 @@ def render_pricing_page():
                 else:
                     try:
                         prop_dict_i = {
-                            "area_sqft": area_sqft_i,
-                            "bedrooms": bedrooms_i,
-                            "bathrooms": bathrooms_i,
-                            "age": age_i,
+                            "area_sqft": float(area_sqft_i),
+                            "bedrooms": int(bedrooms_i),
+                            "bathrooms": float(bathrooms_i),
+                            "age": int(age_i),
                             "has_parking": 1 if has_parking_i else 0,
                             "has_gym": 1 if has_gym_i else 0,
                             "has_pool": 1 if has_pool_i else 0,
@@ -298,9 +310,9 @@ def render_pricing_page():
                         opp = engine.opportunity_for_investor(
                             base_price=base_price_i,
                             location=location_i,
-                            as_of_date=as_of_date_i,
-                            min_roi_pct=min_roi_pct,
-                            list_discount_pct=list_discount_pct,
+                            as_of_date=_clean_date(as_of_date_i),
+                            min_roi_pct=float(min_roi_pct),
+                            list_discount_pct=float(list_discount_pct),
                         )
                         
                         # Display score
@@ -368,14 +380,15 @@ def render_pricing_page():
             
             if st.button("Get Current Price", key="c_btn"):
                 if model is None:
-                    st.error("ML model not loaded. Cannot compute base price.")
+                    st.session_state['current_price_error'] = "ML model not loaded. Cannot compute base price."
+                    st.session_state['current_price_result'] = None
                 else:
                     try:
                         prop_dict_c = {
-                            "area_sqft": area_sqft_c,
-                            "bedrooms": bedrooms_c,
-                            "bathrooms": bathrooms_c,
-                            "age": age_c,
+                            "area_sqft": float(area_sqft_c),
+                            "bedrooms": int(bedrooms_c),
+                            "bathrooms": float(bathrooms_c),
+                            "age": int(age_c),
                             "has_parking": 1 if has_parking_c else 0,
                             "has_gym": 1 if has_gym_c else 0,
                             "has_pool": 1 if has_pool_c else 0,
@@ -395,32 +408,42 @@ def render_pricing_page():
                         current = engine.current_dynamic_price(
                             base_price=base_price_c,
                             location=location_c,
-                            as_of_date=as_of_date_c,
+                            as_of_date=_clean_date(as_of_date_c),
                         )
                         
-                        st.success("Current Price Calculated")
-                        col_a, col_b, col_c, col_d = st.columns(4)
-                        col_a.metric("Current Price", f"${current['current_price']:,.0f}")
-                        col_b.metric("Base Price", f"${current['base_price']:,.0f}")
-                        col_c.metric("Demand Multiplier", f"{current['demand_multiplier']:.2f}x")
-                        col_d.metric("Competition Effect", f"{current['competition_effect']:.2f}x")
-                        
-                        st.caption(f"Demand Level: {current['demand_level']}")
-                        
-                        # Price comparison chart
-                        fig = go.Figure()
-                        fig.add_trace(go.Bar(
-                            x=["Base Price", "Current Dynamic Price"],
-                            y=[current['base_price'], current['current_price']],
-                            marker_color=CHART_COLORS,
-                            text=[f"${current['base_price']:,.0f}", f"${current['current_price']:,.0f}"],
-                            textposition="outside"
-                        ))
-                        fig.update_layout(title="Base vs Current Dynamic Price", yaxis_title="Price ($)")
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.session_state['current_price_result'] = current
+                        st.session_state['current_price_error'] = None
                         
                     except Exception as e:
-                        st.error(f"Error getting current price: {e}")
+                        st.session_state['current_price_error'] = f"Error getting current price: {e}"
+                        st.session_state['current_price_result'] = None
+        
+        # Display results outside column structure
+        if 'current_price_error' in st.session_state and st.session_state['current_price_error']:
+            st.error(st.session_state['current_price_error'])
+        
+        if 'current_price_result' in st.session_state and st.session_state['current_price_result']:
+            current = st.session_state['current_price_result']
+            st.success("Current Price Calculated")
+            col_a, col_b, col_c, col_d = st.columns(4)
+            col_a.metric("Current Price", f"${current['current_price']:,.0f}")
+            col_b.metric("Base Price", f"${current['base_price']:,.0f}")
+            col_c.metric("Demand Multiplier", f"{current['demand_multiplier']:.2f}x")
+            col_d.metric("Competition Effect", f"{current['competition_effect']:.2f}x")
+            
+            st.caption(f"Demand Level: {current['demand_level']}")
+            
+            # Price comparison chart
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=["Base Price", "Current Dynamic Price"],
+                y=[current['base_price'], current['current_price']],
+                marker_color=CHART_COLORS,
+                text=[f"${current['base_price']:,.0f}", f"${current['current_price']:,.0f}"],
+                textposition="outside"
+            ))
+            fig.update_layout(title="Base vs Current Dynamic Price", yaxis_title="Price ($)")
+            st.plotly_chart(fig, use_container_width=True)
     
     # Tab 5: Market Signals Visualization
     with pricing_tab5:

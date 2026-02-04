@@ -123,8 +123,13 @@ def get_current_conditions(
                 return pd.DataFrame()
             as_of_str = row[0]
         else:
-            as_of_date = date(as_of_date) if hasattr(as_of_date, "strftime") else as_of_date
-            as_of_str = as_of_date.strftime("%Y-%m-%d") if hasattr(as_of_date, "strftime") else str(as_of_date)
+            # Convert to date object if needed, then to string
+            if isinstance(as_of_date, date):
+                as_of_str = as_of_date.strftime("%Y-%m-%d")
+            elif hasattr(as_of_date, "strftime"):
+                as_of_str = as_of_date.strftime("%Y-%m-%d")
+            else:
+                as_of_str = str(as_of_date)
 
         query = f"SELECT * FROM {TABLE_NAME} WHERE signal_date = ?"
         params: List = [as_of_str]
