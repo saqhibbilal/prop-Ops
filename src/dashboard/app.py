@@ -64,13 +64,14 @@ if auto_refresh:
     st.experimental_rerun()
 
 # Main tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Overview",
     "Predictions",
     "Drift Detection",
     "Metrics",
     "Model Comparison",
-    "Hyperparameter Tuning"
+    "Hyperparameter Tuning",
+    "Dynamic Pricing"
 ])
 
 # Tab 1: Overview
@@ -465,6 +466,15 @@ with tab6:
             st.info("No tuning results yet. Click 'Run Tuning' to start, or run from CLI: python -m src.training.hyperparameter_tuning --model both")
     except Exception as e:
         st.warning("Hyperparameter tuning not available: " + str(e))
+
+# Tab 7: Dynamic Pricing
+with tab7:
+    try:
+        from dashboard.pricing_page import render_pricing_page
+        render_pricing_page()
+    except Exception as e:
+        st.warning("Dynamic pricing not available: " + str(e))
+        st.info("Ensure market signals are populated: `python -m src.data.generate_market_signals`")
 
 # Footer
 st.sidebar.markdown("---")
