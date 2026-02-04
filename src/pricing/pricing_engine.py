@@ -31,6 +31,7 @@ class RenterAlert:
     asking_price: float
     fair_low: float
     fair_high: float
+    base_price: float
     message: str
 
 
@@ -120,6 +121,7 @@ class PricingEngine:
             asking_price=asking_price,
             fair_low=round(fair_low, 2),
             fair_high=round(fair_high, 2),
+            base_price=round(base_price, 2),
             message=message,
         )
 

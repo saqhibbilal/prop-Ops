@@ -111,7 +111,8 @@ def render_pricing_page():
             
             if st.button("Get Recommendation"):
                 if model is None:
-                    st.error("ML model not loaded. Cannot compute base price.")
+                    st.session_state['owner_rec_error'] = "ML model not loaded. Cannot compute base price."
+                    st.session_state['owner_rec_result'] = None
                 else:
                     try:
                         # Build property dict with explicit types
@@ -157,18 +158,28 @@ def render_pricing_page():
                             as_of_date=_clean_date(as_of_date),
                         )
                         
-                        # Display results
-                        st.success("Recommendation Generated")
-                        col_a, col_b, col_c = st.columns(3)
-                        col_a.metric("Recommended Price", f"${rec.recommended_price:,.0f}")
-                        col_b.metric("Price Range", f"${rec.price_min:,.0f} - ${rec.price_max:,.0f}")
-                        col_c.metric("Base Price", f"${base_price:,.0f}")
-                        
-                        st.info(f"**Reasoning:** {rec.reasoning}")
-                        st.caption(f"Demand Level: {rec.demand_level} | Market Position: {rec.market_position_used}")
+                        st.session_state['owner_rec_result'] = {'rec': rec, 'base_price': base_price}
+                        st.session_state['owner_rec_error'] = None
                         
                     except Exception as e:
-                        st.error(f"Error generating recommendation: {e}")
+                        st.session_state['owner_rec_error'] = f"Error generating recommendation: {e}"
+                        st.session_state['owner_rec_result'] = None
+        
+        # Display results outside column structure
+        if 'owner_rec_error' in st.session_state and st.session_state['owner_rec_error']:
+            st.error(st.session_state['owner_rec_error'])
+        
+        if 'owner_rec_result' in st.session_state and st.session_state['owner_rec_result']:
+            rec = st.session_state['owner_rec_result']['rec']
+            base_price = st.session_state['owner_rec_result']['base_price']
+            st.success("Recommendation Generated")
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Recommended Price", f"${rec.recommended_price:,.0f}")
+            col_b.metric("Price Range", f"${rec.price_min:,.0f} - ${rec.price_max:,.0f}")
+            col_c.metric("Base Price", f"${base_price:,.0f}")
+            
+            st.info(f"**Reasoning:** {rec.reasoning}")
+            st.caption(f"Demand Level: {rec.demand_level} | Market Position: {rec.market_position_used}")
     
     # Tab 2: Renter Alerts
     with pricing_tab2:
@@ -199,7 +210,8 @@ def render_pricing_page():
             
             if st.button("Check Price", key="r_btn"):
                 if model is None:
-                    st.error("ML model not loaded. Cannot compute base price.")
+                    st.session_state['renter_alert_error'] = "ML model not loaded. Cannot compute base price."
+                    st.session_state['renter_alert_result'] = None
                 else:
                     try:
                         prop_dict_r = {
@@ -231,28 +243,38 @@ def render_pricing_page():
                             fair_band_pct=float(fair_band_pct),
                         )
                         
-                        if alert.is_fair:
-                            st.success(alert.message)
-                        else:
-                            st.warning(alert.message)
-                        
-                        col_a, col_b, col_c = st.columns(3)
-                        col_a.metric("Asking Price", f"${alert.asking_price:,.0f}")
-                        col_b.metric("Fair Range", f"${alert.fair_low:,.0f} - ${alert.fair_high:,.0f}")
-                        col_c.metric("Base Price", f"${alert.base_price:,.0f}")
-                        
-                        # Visual indicator
-                        fig = go.Figure()
-                        fig.add_trace(go.Bar(
-                            x=["Fair Low", "Asking", "Fair High"],
-                            y=[alert.fair_low, alert.asking_price, alert.fair_high],
-                            marker_color=[CHART_COLORS[0], CHART_COLORS[2] if alert.is_fair else CHART_COLORS[4], CHART_COLORS[0]]
-                        ))
-                        fig.update_layout(title="Price Comparison", yaxis_title="Price ($)")
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.session_state['renter_alert_result'] = alert
+                        st.session_state['renter_alert_error'] = None
                         
                     except Exception as e:
-                        st.error(f"Error checking price: {e}")
+                        st.session_state['renter_alert_error'] = f"Error checking price: {e}"
+                        st.session_state['renter_alert_result'] = None
+        
+        # Display results outside column structure
+        if 'renter_alert_error' in st.session_state and st.session_state['renter_alert_error']:
+            st.error(st.session_state['renter_alert_error'])
+        
+        if 'renter_alert_result' in st.session_state and st.session_state['renter_alert_result']:
+            alert = st.session_state['renter_alert_result']
+            if alert.is_fair:
+                st.success(alert.message)
+            else:
+                st.warning(alert.message)
+            
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Asking Price", f"${alert.asking_price:,.0f}")
+            col_b.metric("Fair Range", f"${alert.fair_low:,.0f} - ${alert.fair_high:,.0f}")
+            col_c.metric("Base Price", f"${alert.base_price:,.0f}")
+            
+            # Visual indicator
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=["Fair Low", "Asking", "Fair High"],
+                y=[alert.fair_low, alert.asking_price, alert.fair_high],
+                marker_color=[CHART_COLORS[0], CHART_COLORS[2] if alert.is_fair else CHART_COLORS[4], CHART_COLORS[0]]
+            ))
+            fig.update_layout(title="Price Comparison", yaxis_title="Price ($)")
+            st.plotly_chart(fig, use_container_width=True)
     
     # Tab 3: Investor Opportunities
     with pricing_tab3:
@@ -283,7 +305,8 @@ def render_pricing_page():
             
             if st.button("Score Opportunity", key="i_btn"):
                 if model is None:
-                    st.error("ML model not loaded. Cannot compute base price.")
+                    st.session_state['investor_opp_error'] = "ML model not loaded. Cannot compute base price."
+                    st.session_state['investor_opp_result'] = None
                 else:
                     try:
                         prop_dict_i = {
@@ -315,43 +338,56 @@ def render_pricing_page():
                             list_discount_pct=float(list_discount_pct),
                         )
                         
-                        # Display score
-                        score_color = CHART_COLORS[0] if opp.score >= 75 else CHART_COLORS[2] if opp.score >= 50 else CHART_COLORS[4]
-                        st.metric("Opportunity Score", f"{opp.score:.1f}/100", delta=f"{'Meets ROI' if opp.meets_roi else 'Below ROI target'}")
-                        
-                        col_a, col_b, col_c = st.columns(3)
-                        col_a.metric("Suggested Bid", f"${opp.suggested_bid:,.0f}")
-                        col_b.metric("Expected Value", f"${opp.expected_value:,.0f}")
-                        col_c.metric("Base Price", f"${base_price_i:,.0f}")
-                        
-                        st.info(f"**Reasoning:** {opp.reasoning}")
-                        
-                        # Score visualization
-                        fig = go.Figure(go.Indicator(
-                            mode="gauge+number",
-                            value=opp.score,
-                            domain={'x': [0, 1], 'y': [0, 1]},
-                            title={'text': "Opportunity Score"},
-                            gauge={
-                                'axis': {'range': [None, 100]},
-                                'bar': {'color': score_color},
-                                'steps': [
-                                    {'range': [0, 50], 'color': "lightgray"},
-                                    {'range': [50, 75], 'color': "gray"},
-                                    {'range': [75, 100], 'color': "darkgray"}
-                                ],
-                                'threshold': {
-                                    'line': {'color': "red", 'width': 4},
-                                    'thickness': 0.75,
-                                    'value': min_roi_pct * 10
-                                }
-                            }
-                        ))
-                        fig.update_layout(height=300)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.session_state['investor_opp_result'] = {'opp': opp, 'base_price_i': base_price_i, 'min_roi_pct': min_roi_pct}
+                        st.session_state['investor_opp_error'] = None
                         
                     except Exception as e:
-                        st.error(f"Error scoring opportunity: {e}")
+                        st.session_state['investor_opp_error'] = f"Error scoring opportunity: {e}"
+                        st.session_state['investor_opp_result'] = None
+        
+        # Display results outside column structure
+        if 'investor_opp_error' in st.session_state and st.session_state['investor_opp_error']:
+            st.error(st.session_state['investor_opp_error'])
+        
+        if 'investor_opp_result' in st.session_state and st.session_state['investor_opp_result']:
+            opp = st.session_state['investor_opp_result']['opp']
+            base_price_i = st.session_state['investor_opp_result']['base_price_i']
+            min_roi_pct = st.session_state['investor_opp_result']['min_roi_pct']
+            
+            # Display score
+            score_color = CHART_COLORS[0] if opp.score >= 75 else CHART_COLORS[2] if opp.score >= 50 else CHART_COLORS[4]
+            st.metric("Opportunity Score", f"{opp.score:.1f}/100", delta=f"{'Meets ROI' if opp.meets_roi else 'Below ROI target'}")
+            
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Suggested Bid", f"${opp.suggested_bid:,.0f}")
+            col_b.metric("Expected Value", f"${opp.expected_value:,.0f}")
+            col_c.metric("Base Price", f"${base_price_i:,.0f}")
+            
+            st.info(f"**Reasoning:** {opp.reasoning}")
+            
+            # Score visualization
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=opp.score,
+                domain={'x': [0, 1], 'y': [0, 1]},
+                title={'text': "Opportunity Score"},
+                gauge={
+                    'axis': {'range': [None, 100]},
+                    'bar': {'color': score_color},
+                    'steps': [
+                        {'range': [0, 50], 'color': "lightgray"},
+                        {'range': [50, 75], 'color': "gray"},
+                        {'range': [75, 100], 'color': "darkgray"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': min_roi_pct * 10
+                    }
+                }
+            ))
+            fig.update_layout(height=300)
+            st.plotly_chart(fig, use_container_width=True)
     
     # Tab 4: Current Dynamic Price
     with pricing_tab4:
