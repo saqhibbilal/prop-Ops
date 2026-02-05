@@ -50,9 +50,3 @@ This is a **learning project** that demonstrates an end-to-end MLOps system for 
 - Investor opportunity scoring (ROI analysis)
 - Current dynamic pricing (surge-style)
 - Market signals visualization
-
-**To run the project after cloning:** see **[setup.md](setup.md)** for step-by-step setup, data generation, training, and running the API and dashboard.
-
-## License
-
-This is a learning project. Use freely for educational purposes.
